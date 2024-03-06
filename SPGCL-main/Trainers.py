@@ -88,7 +88,7 @@ class SPGCLTrainer(object):
                 xx = xx.reshape([self.args.num_nodes, self.args.ini_seq_len]) 
                 label = label.reshape([-1, self.args.pre_len])
 
-                # Y_pre = [N, pre_len]
+                # Y_pre = [B * N, pre_len]
                 Y_pre = self.model([xx, x, self.graph])
                 if self.args.real_value:
                     label = self.scaler.inverse_transform(label)
@@ -713,9 +713,9 @@ class SPGCLTrainer(object):
 
             print("MAE: {}, RMSE: {}, MAPE1: {}, MAPE2: {}".format(mae, rmse, mape1, mape2))
             self.logger.info("MAE: {}, RMSE: {}, MAPE1: {}, MAPE2: {}".format(mae, rmse, mape1, mape2))
-        if "HZY" in args.save_dir:
+        # if "HZY" in args.save_dir:
+        else:
             mae = rmse = mape1 = mape2 = 0
-
         pd.DataFrame(y_true.mean(axis=2)).to_csv(args.save_dir + r'\{}_true.csv'.format(args.data), mode='a+', header=False)  # (1, 307, 12)
         pd.DataFrame(y_pred.mean(axis=2)).to_csv(args.save_dir + r'\{}_pred.csv'.format(args.data), mode='a+', header=False)
         pd.DataFrame(real_y_true.mean(axis=2)).to_csv(args.save_dir + r'\{}_real_true.csv'.format(args.data), mode='a+', header=False)

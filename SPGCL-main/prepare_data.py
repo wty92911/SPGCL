@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import lib.utils as utils
 from lib.args import add_args
-from lib.dataloader import Slope, Traffic
+from lib.dataloader import Slope, Traffic, Stock
 
 
 # Load and initialize other parameters
@@ -23,7 +23,7 @@ utils.makedirs(args.graph_dir)
 utils.set_random_seed(args.seed)
 
 
-def prepare_data(data, save_dir=r"..\SPGCL\datasets"):
+def prepare_data(data, save_dir=r"./datasets"):
     save_path = os.path.join(save_dir, "{}_dtw.npy".format(data))
     if os.path.exists(save_path):
         return
@@ -35,9 +35,21 @@ def prepare_data(data, save_dir=r"..\SPGCL\datasets"):
             if os.path.exists(save_path_i):
                 pass
             else:
-                dtw_list = dtw.distance_matrix(slope_set.features[:, i:i + args.seq_len], parallel=False, show_progress=True).astype(
+                dtw_list = dtw.distance_matrix(slope_set.features[:, i:i + args.seq_len], show_progress=False).astype(
                     "float32")
                 np.save(save_path_i, dtw_list)
+    elif "STOCK" in data:
+        stock_set = Stock(save_dir, data_name=data, seq_len=30, gap_len = 5, pre_len=5, args=args, prepare_data=True)
+        save_path = os.path.join(save_dir, data)
+        for i in range(stock_set.len):
+            save_path_i = os.path.join(save_path, "{}_dtw_{}.npy".format(data, i))
+            if os.path.exists(save_path_i):
+                pass
+            else:
+                dtw_list = dtw.distance_matrix(stock_set.features[:, i:i + args.seq_len], show_progress=False).astype(
+                    "float32")
+                np.save(save_path_i, dtw_list)
+        pass
     else:   # Slope datasets
         slope_set = Slope(save_dir, data_name=data, seq_len=3, pre_len=1, args=args, prepare_data=True)
         features = slope_set.features
@@ -47,7 +59,7 @@ def prepare_data(data, save_dir=r"..\SPGCL\datasets"):
 
 if __name__ == '__main__':
     # Do not forget to change args.data in lib.args.py
-    save_dir = r"..\SPGCL\datasets"
-    data = ["HZY_west", "HZY_east", "PEMS03", "PEMS04"]
+    save_dir = r"./datasets"
+    data = ["STOCK500"]
     for i in data:
         prepare_data(i, save_dir)

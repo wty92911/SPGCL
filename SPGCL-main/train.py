@@ -7,15 +7,16 @@ import torch.optim as optim
 import lib.utils as utils
 from lib.args import add_args
 from torch.utils.data import DataLoader, Subset
-from lib.dataloader import Slope, Traffic
+from lib.dataloader import Slope, Traffic, Stock
 from lib.layers.SPGCL import SPGCL
 from Trainers import SPGCLTrainer
 
 # Load and initialize other parameters
 parser = argparse.ArgumentParser('StdModel')
-add_args(parser)
+add_args(parser, "CSI500")
 args = parser.parse_args()
 args.device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+torch.cuda.set_device(args.device)
 args.save_dir = os.path.join('results', args.data, args.log_key)
 args.fig_save_dir = os.path.join(args.save_dir, 'figs')
 args.log_dir = os.path.join(args.save_dir, 'logs')
@@ -41,6 +42,13 @@ if __name__ == '__main__':
                             args=args, train_set=True)
         test_set = Traffic(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
                            args=args, train_set=False)
+    elif "CSI500" in args.data:
+            slope_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
+                                pre_len=args.pre_len, args=args, train_set=True)
+            print("Train set Donw")
+            test_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
+                                pre_len=args.pre_len, args=args, train_set=False)
+            print("Test Set Done")
     else:
         slope_set = Slope(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
                           args=args, train_set=True)
@@ -70,7 +78,7 @@ if __name__ == '__main__':
         normed_judge, real_judge, pems_result = trainer.train(args=args)
     elif args.mode == "test":
         normed_judge, real_judge, pems_result = trainer.test(model, trainer.args, test_loader, scaler,
-                                                             path=args.save_dir + r"\best_model.pth", mode=args.mode)
+                                                             path=args.save_dir + r"/best_model.pth", mode=args.mode)
     else:
         raise ValueError
 
@@ -85,6 +93,9 @@ if __name__ == '__main__':
         # every train loop ini slope set
         if "PEMS" in args.data:
             slope_set = Traffic(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len,
+                                pre_len=args.pre_len, args=args)
+        elif "CSI500" in args.data:
+            slope_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
                                 pre_len=args.pre_len, args=args)
         else:
             slope_set = Slope(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len,
@@ -105,7 +116,7 @@ if __name__ == '__main__':
             normed_judge, real_judge, pems_result = trainer.train(args=args)
         elif args.mode == "test":
             normed_judge, real_judge, pems_result = trainer.test(model, trainer.args, test_loader, scaler,
-                                                                 path=args.save_dir + r"\best_model.pth",
+                                                                 path=args.save_dir + r"/best_model.pth",
                                                                  mode=args.mode)
         else:
             raise ValueError

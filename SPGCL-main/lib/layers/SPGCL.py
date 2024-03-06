@@ -113,7 +113,7 @@ class SPGCL(torch.nn.Module):
             c_embeddings, _, _ = self.c_aggregate((W, r_embeddings, connectivity_mask))
             # Eq.15. return loss，else return node embedding
             # score=[N, N] \in [-1, 1]. Calculate cosine similarity
-            score_matrix = -nn.functional.pirwise_distance(c_embeddings.unsqueeze(dim=1), r_embeddings, p=2)
+            score_matrix = -nn.functional.pairwise_distance(c_embeddings.unsqueeze(dim=1), r_embeddings, p=2)
             score_matrix = (score_matrix - score_matrix.min())/(score_matrix.max()-score_matrix.min())
             score_matrix = score_matrix * 2 - 1     # to [-1, 1]
         else:

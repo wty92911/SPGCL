@@ -32,7 +32,7 @@ def preprocess_data(data, time_len, rate, seq_len, pre_len):
 data_set = 'HZY_west'
 # mode = "real data"
 mode = "normalize data"
-path = r"..\datasets\HZY_west\HZY_west.csv"
+path = r"./datasets/HZY_west/HZY_west.csv"
 data = np.loadtxt(fname=path, skiprows=1, delimiter=",").astype("float32")
 data = data[:, 3:]
 # data = pd.read_csv(path)
@@ -184,7 +184,7 @@ result_type = method
 hyper_parameters = 'None'
 time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-pure_data_file = r"..\pure_result.csv"
+pure_data_file = r"./pure_result.csv"
 with open(pure_data_file, mode='a') as fin:
     str = "\n{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{},{},{},{},{}".format(rmse_ts, mae_ts, acc_ts, r2_ts, var_ts,
                                                                        time_stamp, hyper_parameters, data_set,

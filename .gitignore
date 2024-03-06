@@ -1,0 +1,7 @@
+SPGCL-main/datasets
+SPGCL-main/nohup.out
+# SPGCL-main/*/__pycache__
+SPGCL-main/results/
+__pycache__/
+
+tmp.out

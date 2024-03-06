@@ -3,10 +3,11 @@ import configparser
 
 # datasets path
 DATAPATH = {
-    "HZY_west": r"..\SPGCL\datasets\HZY_west.csv",
-    "HZY_east": r"..\SPGCL\datasets\HZY_east.csv",
-    "PEMS03":   r"..\SPGCL\datasets",
-    "PEMS04":   r"..\SPGCL\datasets",
+    "HZY_west": r"./datasets/HZY_west.csv",
+    "HZY_east": r"./datasets/HZY_east.csv",
+    "PEMS03":   r"./datasets/PEMS03",
+    "PEMS04":   r"./datasets/PEMS04",
+    "CSI500":   r"./datasets/CSI500"
 }
 
 
@@ -20,7 +21,7 @@ def add_args(parser, data_set="PEMS03"):
     parser.add_argument('--valid', type=eval, default=False, help="Whether to use validation")
     parser.add_argument('--update_freq', type=int, default=10, help="frequency of update graph")
 
-    config_path = r'..\SPGCL\CONFIG\{}.conf'.format(data_set)
+    config_path = r'./CONFIG/{}.conf'.format(data_set)
     if os.path.exists(config_path):
         load_paras_config(parser, config_path)
     else:
@@ -85,15 +86,15 @@ def add_args(parser, data_set="PEMS03"):
     parser.add_argument('--temperature', type=float, default=0.1)
 
     parser.add_argument('--data', choices=DATAPATH.keys(), type=str, default=data_set)
-    parser.add_argument('--data_path', choices=DATAPATH, type=str, default=DATAPATH[data_set])
-    parser.add_argument('--data_dir', type=str, default=r"..\SPGCL\datasets")
+    parser.add_argument('--data_path', choices=DATAPATH.values(), type=str, default=DATAPATH[data_set])
+    parser.add_argument('--data_dir', type=str, default=r"./datasets")
 
     parser.add_argument('--train', type=float, default=0.5)
     parser.add_argument('--validation', type=float, default=0.3)
     parser.add_argument('--test', type=float, default=0.2)
 
     # Saving settings
-    parser.add_argument('--save_file', type=str, default=r"..\SPGCL\results\pure_result.csv")
+    parser.add_argument('--save_file', type=str, default=r"./results/pure_result.csv")
     parser.add_argument('--writer', type=eval, default=True, help="tensorboard")
     # no update
     parser.add_argument('--lambda_n', type=int, default=10)
@@ -138,6 +139,7 @@ def load_paras_config(parser, config_path):
     parser.add_argument('--pre_len', type=int, default=config['data']['pre_len'], help="len of Y")
     parser.add_argument('--ini_seq_len', type=int, default=config['data']['ini_seq_len'])
     parser.add_argument('--seq_len', type=int, default=config['data']['seq_len'], help="len of S + 3")
+    parser.add_argument('--gap_len', type=int, default=config['data']['gap_len'], help="X_GAP_Y")
     # save
     parser.add_argument('--acc_threshold', default=config['save']['acc_threshold'], type=float)
     parser.add_argument('--acc_real_threshold', default=config['save']['acc_real_threshold'], type=float)
