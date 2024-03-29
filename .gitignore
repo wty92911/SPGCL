@@ -5,3 +5,5 @@ SPGCL-main/results/
 __pycache__/
 
 tmp.out
+*.out
+*.txt

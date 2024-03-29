@@ -14,7 +14,7 @@ from Trainers import SPGCLTrainer
 
 # Load and initialize other parameters
 parser = argparse.ArgumentParser('StdModel')
-add_args(parser)
+add_args(parser, "CSI500")
 args = parser.parse_args()
 args.device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
 torch.cuda.set_device(args.device)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
                            args=args, train_set=False)
     elif "CSI" in args.data:
         test_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
-                                pre_len=args.pre_len, args=args, train_set=False)
+                                pre_len=args.pre_len, args=args, mode="test")
     else:
         test_set = Slope(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
                          args=args, train_set=False)
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     if args.mode == "test":
         normed_judge, real_judge, pems_result = trainer.pure_test(model, trainer.args, test_loader, scaler,
-                                                                  path=args.save_dir + r"/best_model.pth",
+                                                                  path=r"./results/CSI500/training/best_model.pth",
                                                                   mode=args.mode)
     else:
         raise ValueError

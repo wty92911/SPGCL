@@ -455,160 +455,109 @@ class Stock(Dataset):
         self.batch_size = args.batch_size
         self.date_format = r"%Y-%m-%d %H:%M:%S"
         self.cur_batch_index = -1
+
+        file_data = np.load(r"/home/undergrad2023/tywang/SPGCL/SPGCL-main/datasets/CSI500/CSI500.npz")
+        
+        train_x = file_data[mode + '_x']  
+        self.train_x = torch.from_numpy(train_x).float().to(device)
+        train_target = file_data[mode + '_target'] 
+        train_target = torch.from_numpy(train_target).float().to(device) #[B, N, T]
+        # transform price to yield
+        self.train_target = (train_target[:, :, -1] - train_target[:, :, 0]) / (train_target[:, :, 0] + 1e-5) # expected yield
+
+        timestamp = file_data[mode + '_timestamp'] # index in minute data
+        self.x_timestamp = timestamp[:, 0, :]
+        self.y_timestamp = timestamp[:, 1, :]
+        self.industry_dist = torch.from_numpy(np.load(r"/home/undergrad2023/tywang/SPGCL/SPGCL-main/datasets/CSI500/industry_dist.npy")).float().to(device)
+        
         with open(os.path.join(data_dir, data_name, "features_col.json"), 'r') as f:
             features_col = json.load(f)
-        # with open(os.path.join(data_dir, data_name, "minute_features_col.json"), 'r') as f:
-        #     minute_features_col = json.load(f)
-        # with open(os.path.join(data_dir, data_name, "date.csv"), 'r') as f:
-        #     reader = csv.reader(f)
-        #     self.daily_date = [datetime.strptime(x[0], self.date_format) for x in reader] #[DT]
-        # with open(os.path.join(data_dir, data_name, "minute_datetime.csv"), 'r') as f:
-        #     reader = csv.reader(f)
-        #     self.minute_datetime = [datetime.strptime(x[0], self.date_format) for x in reader] #[MT]
-        # Read, select, and re-formating.
+        
         daily_features = torch.load(os.path.join(data_dir, data_name, "features.pth")).numpy().astype(self.format) #[N, DT, DF]
-        # minute_features = torch.load(os.path.join(data_dir, data_name, "minute_features.pth")).numpy().astype(self.format) #[N, MT, MF]
-        reg_cap = pd.read_csv(os.path.join(data_dir, data_name, "reg_capital.csv")).values[:, 1].astype(self.format) #[N]
+        # reg_cap = pd.read_csv(os.path.join(data_dir, data_name, "reg_capital.csv")).values[:, 1].astype(self.format) #[N]
         self.total_num_nodes = daily_features.shape[0] # = minute_features.shape[0] = 500
+        self.num_nodes = 500
 
-
-        print("Shape of {}: {} ".format(data_name, daily_features.shape), ", select shape: {} nodes {}/{} features".format(self.total_num_nodes, args.feature_volume, daily_features.shape[1]))
+        # print("Shape of {}: {} ".format(data_name, daily_features.shape), ", select shape: {} nodes {}/{} features".format(self.total_num_nodes, args.feature_volume, daily_features.shape[1]))
         
-        # daily data
+        # # daily data
         pct_chg = daily_features[:, :, features_col.index('pct_chg')] #[N, DT]
-        industry = daily_features[:, :, features_col.index('industry')] #[N, DT] == [N, repeat]
-        turnover_rate = daily_features[:, :, features_col.index('turnover_rate')] #[N, DT]
-        total_mv = daily_features[:, :, features_col.index('total_mv')] #[N, DT]
-        pe = daily_features[:, :, features_col.index('pe')] #[N, DT]
+        # turnover_rate = daily_features[:, :, features_col.index('turnover_rate')] #[N, DT]
+        # total_mv = daily_features[:, :, features_col.index('total_mv')] #[N, DT]
+        # pe = daily_features[:, :, features_col.index('pe')] #[N, DT]
         
-        # minute data
-        minute_close = minute_features[:, :, minute_features_col.index('close')] #[N, MT] as label
         
         
         # Masking subgraph
-
+        self.train_x, self.scaler = self.normalize_dataset(self.train_x, "None", False)
+        self.len = self.train_x.shape[0]
         mask, self.edge_index, self.edge_index_negative = self.masking(loc=pct_chg[:, -480:], args=args) #TODO: find a better feature as loc
         self.mask = mask
-        pct_chg = pct_chg[mask, :] # mask 之后 num nodes 可能变化
-        industry = industry[mask, :]
-        turnover_rate = turnover_rate[mask, :]
-        total_mv = total_mv[mask, :]
-        pe = pe[mask, :]
-        reg_cap = reg_cap[mask]
+        # pct_chg = pct_chg[mask, :] # mask 之后 num nodes 可能变化
+        # turnover_rate = turnover_rate[mask, :]
+        # total_mv = total_mv[mask, :]
+        # pe = pe[mask, :]
+        # reg_cap = reg_cap[mask]
 
-        minute_close = minute_close[mask, :]
-        self.num_nodes = minute_close.shape[0]
 
-        # select and normalize features
-        minute_close, self.scaler = self.normalize_dataset(minute_close, "std", False)  # [N, MT]
-        split_line1 = int(minute_close.shape[1] / 240 * args.train) * 240
-        split_line2 = int(minute_close.shape[1] / 240 * args.val) * 240
-        # select and normalize features
-        print("Masking Done: split_line1 is {}, split_line2 is {}".format(split_line1, split_line2))
-        if mode == "train":
-            minute_close = minute_close[:, :split_line1]
-        elif mode == "test":
-            minute_close = minute_close[:, split_line2:]
-
-        # Store some information. len is decided by self.get_X_and_Y.
-        # self.len = pct_chg.shape[-1] - self.seq_len - self.gap_len - self.pre_len + 1
-        # abs_X, abs_Y = self.get_X_and_Y(pct_chg)  # [B, N, seq_len], [B, N, pre_len]
-        abs_X, abs_Y, daily_index = self.split_minute_data(minute_close, args) # [B, N, seq_len], [B, N, pre_len], [B, N, pre_len]
-        bias_day = 0
-        if mode == "test":
-            bias_day = split_line2 // 240
-        elif mode == "val":
-            bias_day = split_line1 // 240
-        daily_index = [x + bias_day for x in daily_index]
-        print("Split Done, abs_shape X:{} Y:{}".format(abs_X.shape, abs_Y.shape))
-        self.len = abs_X.shape[0]
-        self.trainX_abs = torch.tensor(abs_X)
-        print("trainX_abs shape{}".format(self.trainX_abs.shape))
-        self.seq_len = self.trainX_abs.shape[-1]
-        self.trainY = torch.from_numpy(abs_Y.copy()).float()# [B, N, pre_len]
-        print("self.len = {}, self.seq_len = {}".format(self.len, self.seq_len))
+        # self.len = train_x.shape[0]
+        # self.trainX_abs = torch.tensor(abs_X)
+        # print("self.len = {}, self.seq_len = {}".format(self.len, self.seq_len))
         
-        if not prepare_data:
-            return
-        # [N, N, DT]    
-        daily_mv_dist = total_mv[np.newaxis, :, :] - total_mv[:, np.newaxis, :]
-        daily_pe_dist = pe[np.newaxis, :, :] - pe[:, np.newaxis, :]
-        daily_industry_dist = reg_cap[np.newaxis, :, np.newaxis] - reg_cap[:, np.newaxis, np.newaxis] + turnover_rate[np.newaxis, :, :] - turnover_rate[:, np.newaxis, :]
-        daily_industry_dist[industry[:, np.newaxis, :] != industry[np.newaxis, :, :]] = 0
-        relative_daily_pct_chg = pct_chg[:, np.newaxis, :] - pct_chg[np.newaxis, :, :]
+        # # [N, N, DT]    
+        # daily_mv_dist = total_mv[np.newaxis, :, :] - total_mv[:, np.newaxis, :]
+        # daily_pe_dist = pe[np.newaxis, :, :] - pe[:, np.newaxis, :]
+        # daily_industry_dist = reg_cap[np.newaxis, :, np.newaxis] - reg_cap[:, np.newaxis, np.newaxis] + turnover_rate[np.newaxis, :, :] - turnover_rate[:, np.newaxis, :]
+        # daily_industry_dist[industry[:, np.newaxis, :] != industry[np.newaxis, :, :]] = 0
+        # relative_daily_pct_chg = pct_chg[:, np.newaxis, :] - pct_chg[np.newaxis, :, :]
 
-        relative_X = abs_X[:, np.newaxis, :, :] - abs_X[:, :, np.newaxis, :]
-        means = []
-        print("relative_X shape{}".format(relative_X.shape))
-        for batch_start in range(0, relative_X.shape[0], self.batch_size):
-            W = []
-            for i in range(batch_start, min(batch_start + self.batch_size, relative_X.shape[0])):
-                w = np.concatenate((relative_X[i], daily_mv_dist[:, :, daily_index[i], np.newaxis], daily_pe_dist[:, :, daily_index[i], np.newaxis], 
-                                daily_industry_dist[:, :, daily_index[i], np.newaxis], relative_daily_pct_chg[:, :, daily_index[i], np.newaxis]), axis=2)
-                W.append(w)
-            print("Concatente i = {}".format(batch_start))
-            tensor_w = torch.from_numpy(np.stack(W, axis=0)).float()
-            means.append(tensor_w.mean(dim=1, keepdim=True))
-            torch.save(tensor_w, os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
-            W = []
+        # relative_X = abs_X[:, np.newaxis, :, :] - abs_X[:, :, np.newaxis, :]
+        # means = []
+        # print("relative_X shape{}".format(relative_X.shape))
+        # for batch_start in range(0, relative_X.shape[0], self.batch_size):
+        #     W = []
+        #     for i in range(batch_start, min(batch_start + self.batch_size, relative_X.shape[0])):
+        #         w = np.concatenate((relative_X[i], daily_mv_dist[:, :, daily_index[i], np.newaxis], daily_pe_dist[:, :, daily_index[i], np.newaxis], 
+        #                         daily_industry_dist[:, :, daily_index[i], np.newaxis], relative_daily_pct_chg[:, :, daily_index[i], np.newaxis]), axis=2)
+        #         W.append(w)
+        #     print("Concatente i = {}".format(batch_start))
+        #     tensor_w = torch.from_numpy(np.stack(W, axis=0)).float()
+        #     means.append(tensor_w.mean(dim=1, keepdim=True))
+        #     torch.save(tensor_w, os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
+        #     W = []
 
-        print("Concatenated Done")
-        mean = torch.cat(means, dim=0).mean(dim=0, keepdim=True)
-        std_sum = 0
-        for batch_start in range(0, relative_X.shape[0], self.batch_size):
-            print("Calc mean i = {}".format(batch_start))
-            tensor_w = torch.load(os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
-            std_sum += (tensor_w - mean).pow(2).sum()
+        # print("Concatenated Done")
+        # mean = torch.cat(means, dim=0).mean(dim=0, keepdim=True)
+        # std_sum = 0
+        # for batch_start in range(0, relative_X.shape[0], self.batch_size):
+        #     print("Calc mean i = {}".format(batch_start))
+        #     tensor_w = torch.load(os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
+        #     std_sum += (tensor_w - mean).pow(2).sum()
         
-        std = (std_sum / (relative_X.shape[0] * relative_X.shape[1] * relative_X.shape[2] * relative_X.shape[3] - 1)).sqrt()
-        print("mean = {}, std = {}".format(mean, std))
-        for batch_start in range(0, relative_X.shape[0], self.batch_size):
-            print("Normalize i = {}".format(batch_start))
-            tensor_w = torch.load(os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
-            tensor_w = (tensor_w - mean) / (std + 1e-6)
-            tensor_w = torch.save(tensor_w, os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
+        # std = (std_sum / (relative_X.shape[0] * relative_X.shape[1] * relative_X.shape[2] * relative_X.shape[3] - 1)).sqrt()
+        # print("mean = {}, std = {}".format(mean, std))
+        # for batch_start in range(0, relative_X.shape[0], self.batch_size):
+        #     print("Normalize i = {}".format(batch_start))
+        #     tensor_w = torch.load(os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
+        #     tensor_w = (tensor_w - mean) / (std + 1e-6)
+        #     tensor_w = torch.save(tensor_w, os.path.join(data_dir, data_name, "temp_tensor/{}X_{}.pth").format(mode, batch_start))
         
         
-
-    def load_trainX(self, batch_index):
-        if self.cur_batch_index == batch_index:
-            return
-        self.cur_batch_index = batch_index
-        self.trainX = torch.load(os.path.join(self.data_dir, self.data_name, "temp_tensor/{}X_{}.pth").format(self.mode, batch_index * self.batch_size))
 
     def __getitem__(self, index):
-        self.load_trainX(index // self.batch_size)
-        x = self.trainX[index % self.batch_size]
-        xx = self.trainX_abs[index]
-        y = self.trainY[index]
+        x = self.industry_dist
+        xx = self.train_x[index]
+        y = self.train_target[index]
         
-        self.seq_len = x.shape[-1]
-        # print("x.shape, xx.shape, y.shape", x.shape, xx.shape, y.shape)
-        return x.to(self.device), xx.to(self.device), y.to(self.device)
+        return x, xx, y
 
     def __len__(self):
         return self.len
     
-    def split_minute_data(self, minute_data, args):
-        daily_minutes = 240 
-        select_nums = args.select_nums
-        num_days = minute_data.shape[1] // daily_minutes
-        X = []
-        Y = []
-        Z = []
-        for i in range(num_days):
-            start_index = i * daily_minutes
-            end_index = (i + 1) * daily_minutes
-            for _ in range(select_nums):
-                start = np.random.randint(start_index, end_index - self.seq_len - self.gap_len - self.pre_len + 1)
-                X.append(minute_data[:, start: start + self.seq_len])
-                Y.append(minute_data[:, start + self.seq_len + self.gap_len: start + self.seq_len + self.gap_len + self.pre_len])
-                Z.append(i)
-        return np.array(X), np.array(Y), np.array(Z)
     def masking(self, loc, args):
-        if args.data_volume > self.total_num_nodes:
-            args.data_volume = self.total_num_nodes
-        mask = np.sort(np.random.choice(a=self.total_num_nodes, size=args.data_volume, replace=False))
+        if args.data_volume > self.num_nodes:
+            args.data_volume = self.num_nodes
+        mask = np.sort(np.random.choice(a=self.num_nodes, size=args.data_volume, replace=False))
         A = self.load_init_adj(loc=loc, args=args)  # load from file, A is the positive graph
         A = A[np.ix_(mask, mask)]
         # neg

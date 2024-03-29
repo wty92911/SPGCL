@@ -91,7 +91,7 @@ class SPGCL(torch.nn.Module):
         # prediction_abs, _ = self.predict_abs([x, connectivity_mask])      # use absolute features in GAT
         # prediction = (prediction_abs+prediction)/2                        # use absolute features in GAT
 
-        # [N, H * E_len] -> [N, pre_len]
+        # [N, E_len] -> [N, pre_len]
         Y = self.Y_proj(prediction)
         return Y
 

@@ -37,38 +37,25 @@ if __name__ == '__main__':
     normed_judge_list = []
     real_judge_list = []
     pems_result_list = []
-    if "PEMS" in args.data:
-        slope_set = Traffic(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
-                            args=args, train_set=True)
-        test_set = Traffic(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
-                           args=args, train_set=False)
-    elif "CSI500" in args.data:
-            slope_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
-                                pre_len=args.pre_len, args=args, train_set=True)
-            print("Train set Donw")
-            test_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
-                                pre_len=args.pre_len, args=args, train_set=False)
-            print("Test Set Done")
-    else:
-        slope_set = Slope(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
-                          args=args, train_set=True)
-        test_set = Slope(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len, pre_len=args.pre_len,
-                         args=args, train_set=False)
 
-    scaler = slope_set.scaler
-    args.num_nodes = slope_set.num_nodes
+    train_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
+                        pre_len=args.pre_len, args=args, mode="train")
+    test_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
+                        pre_len=args.pre_len, args=args, mode="test")
+    valid_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
+                        pre_len=args.pre_len, args=args, mode="valid")
+            
+
+    scaler = train_set.scaler
+    args.num_nodes = train_set.num_nodes
 
     # split test,train,valid set
-    train_set = Subset(slope_set, range(0, slope_set.len))
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
+    train_set = Subset(train_set, range(0, train_set.len))
+    train_loader = DataLoader(train_set, batch_size=1, shuffle=True)
     test_set = Subset(test_set, range(0, test_set.len))
-    test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True)
-
-    if args.valid:
-        validation_set = Subset(slope_set, range(int(slope_set.len * args.train), int(slope_set.len * (1 - args.test))))
-        valid_loader = DataLoader(validation_set, batch_size=args.test_batch_size, shuffle=True)
-    else:
-        valid_loader = test_loader
+    test_loader = DataLoader(test_set, batch_size=1, shuffle=True)
+    valid_set = Subset(valid_set, range(0, valid_set.len))
+    valid_loader = DataLoader(valid_set, batch_size=1, shuffle=True)
 
     trainer = SPGCLTrainer(model, loss, optimizer, train_loader, valid_loader, test_loader, scaler, args)
 
@@ -91,21 +78,15 @@ if __name__ == '__main__':
         # train on subgraphs
         print("Change the train loop to {}".format(train_loop_idx))
         # every train loop ini slope set
-        if "PEMS" in args.data:
-            slope_set = Traffic(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len,
-                                pre_len=args.pre_len, args=args)
-        elif "CSI500" in args.data:
-            slope_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
-                                pre_len=args.pre_len, args=args)
-        else:
-            slope_set = Slope(data_dir=args.data_dir, data_name=args.data, seq_len=args.ini_seq_len,
-                              pre_len=args.pre_len, args=args)
+        if "CSI500" in args.data:
+            train_set = Stock(data_dir=args.data_dir, data_name=args.data, device=args.device, seq_len=args.ini_seq_len, gap_len=args.gap_len,
+                                pre_len=args.pre_len, args=args, mode="train")
 
-        scaler = slope_set.scaler
-        args.num_nodes = slope_set.num_nodes
+        scaler = train_set.scaler
+        args.num_nodes = train_set.num_nodes
 
-        train_set = Subset(slope_set, range(0, slope_set.len))
-        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
+        train_set = Subset(train_set, range(0, train_set.len))
+        train_loader = DataLoader(train_set, batch_size=1, shuffle=True)
 
         trainer.train_loader = train_loader
         trainer.val_loader = valid_loader

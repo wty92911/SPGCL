@@ -1,1 +1,29 @@
 rmse,mae,acc,r2,evs,time_stamp,hyper,data_set,key,mode
+
+0.003,0.019,0.998,0.997,0.997,2024-03-06 08:21:16,normed_value,CSI500,training,train
+5.517,0.895,0.989,0.997,0.997,2024-03-06 08:21:16,real_value,CSI500,training,train
+0.000,0.000,0.000,0.000,2024-03-06 08:21:16,real_value,CSI500,training,train
+0.151,0.118,0.964,1.000,1.000,2024-03-13 01:10:14,None,CSI500,ARIMA,normalize data
+695817.000,345.053,0.027,-816517.692,-684397.608,2024-03-13 01:35:51,normed_value,CSI500,testing,test
+1513694720.000,16093.919,0.029,-816517.720,-683818.464,2024-03-13 01:35:51,real_value,CSI500,testing,test
+16098.166,38929.797,538.004,6071437.500,2024-03-13 01:35:51,real_value,CSI500,testing,test
+0.003,0.019,0.989,0.997,0.997,2024-03-16 06:28:55,normed_value,CSI500,testing,test
+6.194,0.870,0.989,0.997,0.997,2024-03-16 06:28:55,real_value,CSI500,testing,test
+0.870,2.489,0.012,1218.436,2024-03-16 06:28:55,real_value,CSI500,testing,test
+669.248,12.196,0.008,0.639,0.642,2024-03-16 07:07:13,None,CSI500,LSTM,normalize data
+363.408,7.490,0.032,0.804,0.806,2024-03-16 07:10:15,None,CSI500,LSTM,normalize data
+227.006,6.360,0.031,0.878,0.878,2024-03-16 07:43:42,None,CSI500,LSTM,normalize data
+
+
+
+9.632,1.394,0.068,0.993,0.993,2024-03-24 03:24:30,None,CSI500,SVR,normalize data, #1%train data
+6.813,1.254,0.055,0.995,0.995,2024-03-24 03:29:26,None,CSI500,SVR,normalize data  #100% train data
+298.295,5.981,0.066,0.777,0.780,2024-03-24 04:40:36,None,CSI500,LSTM,normalize data
+414.952,6.535,0.068,0.690,0.691,2024-03-24 09:23:41,None,CSI500,LSTM,normalize data
+0.087,0.066,0.967,0.859,0.859,2024-03-24 14:01:50,normed_value,CSI500,training,train
+188.552,3.064,0.968,0.859,0.859,2024-03-24 14:01:50,real_value,CSI500,training,train
+0.000,0.000,0.000,0.000,2024-03-24 14:01:50,real_value,CSI500,training,train
+0.084,0.096,0.791,1.000,1.000,2024-03-24 17:08:56,None,CSI500,ARIMA,normalize data
+0.000,0.003,1.000,-0.049,-0.043,2024-03-28 18:12:57,normed_value,CSI500,training,train
+0.000,0.003,1.000,-0.049,-0.043,2024-03-28 18:12:57,real_value,CSI500,training,train
+0.000,0.000,0.000,0.000,2024-03-28 18:12:57,real_value,CSI500,training,train

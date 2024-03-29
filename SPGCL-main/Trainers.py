@@ -113,7 +113,8 @@ class SPGCLTrainer(object):
 
         for batch_idx, (x, xx, label) in enumerate(self.train_loader):
             torch.cuda.empty_cache()
-            # x = [B, N, N, seq_len] -> [B * N , N, relative_seq_len], y = [B, N, pre_len] -> [B * N , pre_len]
+            # x = [B, N, N, seq_len] -> [B * N , N, relative_seq_len], xx, y = [B, N, pre_len] -> [B * N , pre_len]
+            # print("x.shape, xx.shape, label.shape", x.shape, xx.shape, label.shape)
             x = x.reshape([-1, self.args.num_nodes, self.args.seq_len])  # x is relationship features
             xx = xx.reshape([self.args.num_nodes, self.args.ini_seq_len])  # xx is absolute features
             label = label.reshape([-1, self.args.pre_len])

@@ -62,7 +62,9 @@ def add_args(parser, data_set="PEMS03"):
         parser.add_argument('--pre_len', type=int, default=12, help="len of Y")
         parser.add_argument('--ini_seq_len', type=int, default=12, help="ini len of S")
         parser.add_argument('--seq_len', type=int, default=13, help="len of S + 3")
-
+        parser.add_argument('--gap_len', type=int, default=13, help="")
+        
+        parser.add_argument('--select_nums', type=int, default=6, help="The expected number of samples per day")
     parser.add_argument('--stage_mean', default=1., type=float, help='mean score of a new k')
     parser.add_argument("-f", type=str, default="")
     parser.add_argument("--f", type=str, default="")
@@ -89,7 +91,8 @@ def add_args(parser, data_set="PEMS03"):
     parser.add_argument('--data_path', choices=DATAPATH.values(), type=str, default=DATAPATH[data_set])
     parser.add_argument('--data_dir', type=str, default=r"./datasets")
 
-    parser.add_argument('--train', type=float, default=0.5)
+    parser.add_argument('--train', type=float, default=0.6)
+    parser.add_argument('--val', type=float, default=0.8)
     parser.add_argument('--validation', type=float, default=0.3)
     parser.add_argument('--test', type=float, default=0.2)
 
@@ -140,6 +143,7 @@ def load_paras_config(parser, config_path):
     parser.add_argument('--ini_seq_len', type=int, default=config['data']['ini_seq_len'])
     parser.add_argument('--seq_len', type=int, default=config['data']['seq_len'], help="len of S + 3")
     parser.add_argument('--gap_len', type=int, default=config['data']['gap_len'], help="X_GAP_Y")
+    parser.add_argument('--select_nums', type=int, default=config['data']['select_nums'], help="The expected number of samples per day")
     # save
     parser.add_argument('--acc_threshold', default=config['save']['acc_threshold'], type=float)
     parser.add_argument('--acc_real_threshold', default=config['save']['acc_real_threshold'], type=float)
