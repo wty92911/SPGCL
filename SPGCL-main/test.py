@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader, Subset
 from lib.dataloader import Slope, Traffic, Stock
 from lib.layers.SPGCL import SPGCL
 from Trainers import SPGCLTrainer
-
 # Load and initialize other parameters
 parser = argparse.ArgumentParser('StdModel')
 add_args(parser, "CSI500")
@@ -66,6 +65,7 @@ if __name__ == '__main__':
     else:
         raise ValueError
 
+    torch.save(trainer.graph, "/home/undergrad2023/tywang/SPGCL/SPGCL-main/results/CSI500/graph.pth")
     normed_judge_list.append(normed_judge)
     real_judge_list.append(real_judge)
     pems_result_list.append(pems_result)

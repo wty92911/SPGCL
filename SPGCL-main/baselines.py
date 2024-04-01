@@ -27,7 +27,6 @@ def load_data():
     test_target = file_data['test_target']
     test_timestamp = file_data['test_timestamp']
 
-    pre_mean = file_data['pre_mean']
     return train_x, train_target, train_timestamp, val_x, val_target, val_timestamp, test_x, test_target, test_timestamp, pre_mean
 def re_pre_normalization(x, time_stamps, pre_mean):
     '''
@@ -72,9 +71,9 @@ def evaluation(labels, predicts, T, pre_len, acc_threshold=0.05):
         acc_threshold: if lower than this threshold we regard it as accurate
     Returns:
     """
-    if mode == "normalize data":
-        labels = re_pre_normalization(labels, T, pre_mean)
-        predicts = re_pre_normalization(predicts, T, pre_mean)
+    # if mode == "normalize data":
+    #     labels = re_pre_normalization(labels, T, pre_mean)
+    #     predicts = re_pre_normalization(predicts, T, pre_mean)
     labels = labels.reshape([-1, pre_len])
     predicts = predicts.reshape([-1, pre_len])
     # labels = labels.squeeze(0).astype("float32")

@@ -79,7 +79,7 @@ class SPGCL(torch.nn.Module):
     def get_prediction(self, data):
         with torch.no_grad():
             # [N,N,relative_len] -> r_embeddings = [N, N, E_len]
-            x, r_embeddings, score_matrix = self.get_embedding(data, loss=False)
+            x, r_embeddings, score_matrix = self.get_embedding(data)
 
         eta = 1 - self.args.eta
         # Rescale to [0, 1]
@@ -98,7 +98,6 @@ class SPGCL(torch.nn.Module):
     def get_embedding(self, data, score_mask=True, context=True):
         # xx is absolute features, and in_node_features is related features
         xx, in_nodes_features, connectivity_mask = data
-
         xx = xx.to(torch.float32)  # Comment if necessary
         # in_nodes_features = in_nodes_features.to(torch.float32)
 

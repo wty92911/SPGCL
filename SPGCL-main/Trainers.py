@@ -727,6 +727,55 @@ class SPGCLTrainer(object):
             [rmse_ts_r, mae_ts_r, acc_ts_r, r2_ts_r, var_ts_r]).astype('float64'), np.array(
             [mae, rmse, mape1, mape2]).astype('float64')
 
+    def predict(self, test_x, test_xx, path=None, mode="predict"):
+        test_eta = 0.32     # define the graph's positive edges density
+        model = self.model
+        if path:
+            if os.path.exists(path):
+                check_point = torch.load(path)
+                state_dict = check_point['state_dict']
+                model.load_state_dict(state_dict)
+                model.to(self.args.device)
+                print("Load saved model")
+
+        start_time = time.time()
+
+        # update and build graph
+        model.eval()
+        with torch.no_grad():
+            for epoch in range(1, self.args.epochs + 1):
+                torch.cuda.empty_cache()
+                epoch_start = time.time()
+                scores, epoch_losses, epoch_CL_losses, epoch_PU_losses, epoch_ploss = self.train_epoch(epoch,
+                                                                                                       mode="regular")
+                self.dynamic_delta = self.args.delta - (self.args.delta - 1 + self.args.eta) / \
+                                     (self.args.epochs + 1) * epoch
+                self.dynamic_delta_negative = self.args.delta_negative + (self.args.eta - self.args.delta_negative) / \
+                                              (self.args.epochs + 1) * epoch
+                update_nodes = self.update_graph(scores=scores)
+                if update_nodes < 2:
+                    break
+                update_nodes_negative = self.update_graph_add_negative(scores=scores)
+                self.check_node(scores, lambda_K=10)
+
+                all_edges = self.graph.shape[0] ** 2
+                p_edges = self.graph._nnz()
+                if p_edges / all_edges > test_eta:
+                    break
+                n_edges = self.graph_negative._nnz()
+                self.logger.info(
+                    'DP:{}({:.2f}%), DN:{}, Rest edges:{}'.format(p_edges, 100 * p_edges / all_edges, n_edges,
+                                                                  all_edges - p_edges - n_edges))
+
+        # predict
+        model.eval()
+        with torch.no_grad():
+            torch.cuda.empty_cache()
+            x = test_x.reshape([-1, self.args.num_nodes, self.args.seq_len])
+            xx = test_xx.reshape([self.args.num_nodes, self.args.ini_seq_len])
+            Y_pre = model([xx, x, self.graph])
+            return Y_pre
+
     def pure_test(self, model, args, data_loader, scaler, path=None, mode="test"):
         test_eta = 0.32     # define the graph's positive edges density
 
